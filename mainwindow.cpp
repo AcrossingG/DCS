@@ -18,9 +18,9 @@ MainWindow::MainWindow(QWidget *parent)
     layout->setContentsMargins(16, 12, 16, 12);
     layout->setSpacing(12);
 
-    QPushButton *selODB = new QPushButton(tr("选择 ODB"), ui->centralwidget);
+    QPushButton *selODB = new QPushButton(tr("选择ODB文件"), ui->centralwidget);
     selODB->setMinimumSize(240, 64);
-    QPushButton *selVTK = new QPushButton(tr("选择 VTK"), ui->centralwidget);
+    QPushButton *selVTK = new QPushButton(tr("选择VTK文件"), ui->centralwidget);
     selVTK->setMinimumSize(240, 64);
 
     layout->addWidget(selODB);
