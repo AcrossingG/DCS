@@ -2,3 +2,5 @@
 	准备实现两个类，分别是读写功能，目前ReadODB类开了一个头。MainWindow::onSelODB()里面只差todo内容，MainWindow::onSelVTK()基本为实现未实现。
 	最终读取到的内容可能需要几个vector存储后，拼接成一个通过read.result()输出到WriteVTK类。
 	可能需要下载abaqus，通过abaqus查看vtk文件，不知道能不能通过vtk组件直接在mainwindow上查看。
+5.17
+	需要使用abaqus api，通过python语言调用后，生成json文件，然后readodb类才能读取
