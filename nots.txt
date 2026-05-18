@@ -4,3 +4,7 @@
 	可能需要下载abaqus，通过abaqus查看vtk文件，不知道能不能通过vtk组件直接在mainwindow上查看。
 5.17
 	需要使用abaqus api，通过python语言调用后，生成json文件，然后readodb类才能读取
+5.18
+	实现了odb读取，通过脚本实现调用abaqus api的调用，输出了json文件。将数据结构迁移到了writevtk.cpp，writevtk实现了对json读取，但还没有实现生成.vtu文件。
+	调用脚本时明显感觉到延迟，其实更想直接通过c++代码读取odb，后边可以再重构。
+	vtk文件的演示可以调用fastcae的程序读取vtk并可视化，又或者直接运行已实现的项目来对比。

@@ -11,11 +11,13 @@ CONFIG += c++17
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    readodb.cpp
+    readodb.cpp \
+    writevtk.cpp
 
 HEADERS += \
     mainwindow.h \
-    readodb.h
+    readodb.h \
+    writevtk.h
 
 FORMS += \
     mainwindow.ui

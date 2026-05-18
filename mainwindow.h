@@ -15,18 +15,20 @@ class MainWindow : public QMainWindow
 
 public:
     MainWindow(QWidget *parent = nullptr);
+
     ~MainWindow();
 
 private slots:
     void onSelODB();
-    void onSelVTK();
+
+    void onOutVTK();
 
 private:
     QString selectFile(const QString &title);
 
     Ui::MainWindow *ui;
     QString odbPath;
-    QString vtkPath;
+    QString jsonPath;
     QString outPath;
     QString name;
 };

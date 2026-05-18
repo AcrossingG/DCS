@@ -7,6 +7,7 @@
 #include <QDebug>
 
 #include "readodb.h"
+#include "writevtk.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -20,17 +21,17 @@ MainWindow::MainWindow(QWidget *parent)
 
     QPushButton *selODB = new QPushButton(tr("选择ODB文件"), ui->centralwidget);
     selODB->setMinimumSize(240, 64);
-    QPushButton *selVTK = new QPushButton(tr("选择VTK文件"), ui->centralwidget);
-    selVTK->setMinimumSize(240, 64);
+    QPushButton *outVTK = new QPushButton(tr("生成VTK文件"), ui->centralwidget);
+    outVTK->setMinimumSize(240, 64);
 
     layout->addWidget(selODB);
-    layout->addWidget(selVTK);
+    layout->addWidget(outVTK);
 
     setMinimumSize(1120, 400);
     resize(640, 240);
 
     connect(selODB, &QPushButton::clicked, this, &MainWindow::onSelODB);
-    connect(selVTK, &QPushButton::clicked, this, &MainWindow::onSelVTK);
+    connect(outVTK, &QPushButton::clicked, this, &MainWindow::onOutVTK);
 }
 
 MainWindow::~MainWindow()
@@ -59,10 +60,8 @@ void MainWindow::onSelODB()
         statusBar()->showMessage(tr("请选择正确的文件"), 5000);
         qDebug() << "未知文件：" << path;
     }
-    outPath = QFileInfo(path).path() + QDir::separator()  + QFileInfo(path).completeBaseName() + QStringLiteral(".vtk");
+    outPath = QFileInfo(path).path() + QDir::separator()  + QFileInfo(path).completeBaseName() + QStringLiteral(".vtu");
 
-    statusBar()->showMessage(tr("ODB文件：%1").arg(path), 5000);
-    qDebug() << "打开ODB文件：" << path;
 
     statusBar()->showMessage(tr("正在读取ODB文件"), 5000);
     qDebug() << "读取ODB文件：" << path;
@@ -72,19 +71,26 @@ void MainWindow::onSelODB()
         qDebug() << "读取ODB文件失败（或出现未知错误）";
         return;
     }
+    jsonPath = QFileInfo(path).path() + QDir::separator()  + QFileInfo(path).completeBaseName() + QStringLiteral(".json");
+}
+
+void MainWindow::onOutVTK()
+{
+    WriteVTK write(jsonPath);
+    if (!write.isOk()) {
+        statusBar()->showMessage(tr("获取数据失败"), 5000);
+        qDebug() << "获取ODB数据失败";
+        return;
+    }
 
     statusBar()->showMessage(tr("正在生成VTK文件"), 5000);
     qDebug() << "生成VTK文件：" << outPath;
-    //TODO:writevtk write(read.info());
-}
-
-void MainWindow::onSelVTK()
-{
-    const QString path = selectFile(tr("选择VTK文件"));
-    if (path.isEmpty())
+    write.outVTK(outPath);
+    if (!write.isOk()) {
+        statusBar()->showMessage(tr("生成VTK文件失败"), 5000);
+        qDebug() << "生成VTK文件失败";
         return;
-
-    vtkPath = path;
-    statusBar()->showMessage(tr("VTK文件：%1").arg(path), 5000);
-    qDebug() << "打开VTK文件：" << path;
+    }
+    statusBar()->showMessage(tr("生成VTK文件成功"), 5000);
+    qDebug() << "生成VTK文件成功：" << outPath;
 }
