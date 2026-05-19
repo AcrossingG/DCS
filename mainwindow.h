@@ -21,7 +21,11 @@ public:
 private slots:
     void onSelODB();
 
+    void onSelJSON();
+
     void onOutVTK();
+
+    void onCheckVTK();
 
 private:
     QString selectFile(const QString &title);

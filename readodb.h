@@ -5,6 +5,8 @@
 #include <QVector>
 #include <QHash>
 
+class QObject;
+
 class ReadODB
 {
 public:

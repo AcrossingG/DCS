@@ -8,3 +8,6 @@
 	实现了odb读取，通过脚本实现调用abaqus api的调用，输出了json文件。将数据结构迁移到了writevtk.cpp，writevtk实现了对json读取，但还没有实现生成.vtu文件。
 	调用脚本时明显感觉到延迟，其实更想直接通过c++代码读取odb，后边可以再重构。
 	vtk文件的演示可以调用fastcae的程序读取vtk并可视化，又或者直接运行已实现的项目来对比。
+5.19
+	使用c++的话，需要对应版本MSVC 编译器和Abaqus DLL环境，就放弃了使用c++，仅使用python调用了。
+	完成了.vtu文件生成。完成了检验脚本，使用python中pip的VTK。

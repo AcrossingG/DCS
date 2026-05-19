@@ -10,6 +10,7 @@
 #include <QJsonObject>
 #include <QJsonParseError>
 #include <QJsonValue>
+#include <QTextStream>
 
 WriteVTK::WriteVTK() {}
 
@@ -202,7 +203,147 @@ bool WriteVTK::getDataFromJson(QString path)
 
 void WriteVTK::outVTK(QString outPath)
 {
+    isFailed = true;
 
+    if (nodes.isEmpty() || elements.isEmpty()) {
+        qDebug() << "No mesh data to write.";
+        return;
+    }
+
+    const FrameData *frame = nullptr;
+    if (!steps.isEmpty()) {
+        for (int stepIndex = steps.size() - 1; stepIndex >= 0 && frame == nullptr; --stepIndex) {
+            const StepData &step = steps.at(stepIndex);
+            if (!step.frames.isEmpty())
+                frame = &step.frames.last();
+        }
+    }
+
+    const QFileInfo outInfo(outPath);
+    QDir outDir = outInfo.dir();
+    if (!outDir.exists() && !outDir.mkpath(QStringLiteral("."))) {
+        qDebug() << "Failed to create output directory:" << outDir.absolutePath();
+        return;
+    }
+
+    QFile file(outInfo.absoluteFilePath());
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+        qDebug() << "Failed to open VTU file for writing:" << outInfo.absoluteFilePath()
+                 << file.errorString();
+        return;
+    }
+
+    QTextStream stream(&file);
+    stream.setRealNumberNotation(QTextStream::ScientificNotation);
+    stream.setRealNumberPrecision(16);
+
+    QVector<int> connectivity;
+    QVector<int> offsets;
+    QVector<int> types;
+    connectivity.reserve(elements.size() * 8);
+    offsets.reserve(elements.size());
+    types.reserve(elements.size());
+
+    int offset = 0;
+    for (const Element &element : elements) {
+        for (int label : element.nodeLabels) {
+            const int nodeIndex = nodeNumToIndex.value(label, -1);
+            if (nodeIndex < 0) {
+                qDebug() << "Element references missing node label:" << element.label << label;
+                return;
+            }
+            connectivity.append(nodeIndex);
+            ++offset;
+        }
+        offsets.append(offset);
+        types.append(element.vtkType);
+    }
+
+    auto writeField = [&stream](const FieldData &field) {
+        const int components = qMax(1, field.components);
+        stream << "        <DataArray type=\"Float64\" Name=\"" << field.name
+               << "\" NumberOfComponents=\"" << components
+               << "\" format=\"ascii\">\n          ";
+        for (int i = 0; i < field.data.size(); ++i) {
+            stream << field.data.at(i);
+            if (i + 1 < field.data.size())
+                stream << ' ';
+        }
+        stream << "\n        </DataArray>\n";
+    };
+
+    stream << "<?xml version=\"1.0\"?>\n";
+    stream << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n";
+    stream << "  <UnstructuredGrid>\n";
+    stream << "    <Piece NumberOfPoints=\"" << nodes.size()
+           << "\" NumberOfCells=\"" << elements.size() << "\">\n";
+
+    stream << "      <Points>\n";
+    stream << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">\n          ";
+    for (int i = 0; i < nodes.size(); ++i) {
+        const Node &node = nodes.at(i);
+        stream << node.x << ' ' << node.y << ' ' << node.z;
+        if (i + 1 < nodes.size())
+            stream << ' ';
+    }
+    stream << "\n        </DataArray>\n";
+    stream << "      </Points>\n";
+
+    stream << "      <Cells>\n";
+    stream << "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n          ";
+    for (int i = 0; i < connectivity.size(); ++i) {
+        stream << connectivity.at(i);
+        if (i + 1 < connectivity.size())
+            stream << ' ';
+    }
+    stream << "\n        </DataArray>\n";
+
+    stream << "        <DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n          ";
+    for (int i = 0; i < offsets.size(); ++i) {
+        stream << offsets.at(i);
+        if (i + 1 < offsets.size())
+            stream << ' ';
+    }
+    stream << "\n        </DataArray>\n";
+
+    stream << "        <DataArray type=\"UInt8\" Name=\"types\" format=\"ascii\">\n          ";
+    for (int i = 0; i < types.size(); ++i) {
+        stream << types.at(i);
+        if (i + 1 < types.size())
+            stream << ' ';
+    }
+    stream << "\n        </DataArray>\n";
+    stream << "      </Cells>\n";
+
+    stream << "      <PointData>\n";
+    if (frame != nullptr) {
+        for (const FieldData &field : frame->pointData)
+            writeField(field);
+    }
+    stream << "      </PointData>\n";
+
+    stream << "      <CellData>\n";
+    if (frame != nullptr) {
+        for (const FieldData &field : frame->cellData)
+            writeField(field);
+    }
+    stream << "      </CellData>\n";
+
+    stream << "    </Piece>\n";
+    stream << "  </UnstructuredGrid>\n";
+    stream << "</VTKFile>\n";
+
+    file.close();
+    if (file.error() != QFile::NoError) {
+        qDebug() << "Failed while writing VTU file:" << file.errorString();
+        return;
+    }
+
+    qDebug() << "VTU file written:" << outInfo.absoluteFilePath()
+             << "points:" << nodes.size()
+             << "cells:" << elements.size()
+             << "hasFrameData:" << (frame != nullptr);
+    isFailed = false;
 }
 
 bool WriteVTK::isOk()
